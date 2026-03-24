@@ -21,10 +21,9 @@ const defaultFiles = (chipName) => {
 
     if (chipName.includes('ESP32')) {
         return [
-            { offset: '1000' },
             { offset: '8000' },
-            { offset: 'E000' },
-            { offset: '10000' }
+            { offset: '10000' },
+            { offset: '3FF000' }
         ]
     } else {
         return [

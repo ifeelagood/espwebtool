@@ -9,15 +9,23 @@ import Typography from '@mui/material/Typography'
 
 import Header from './components/Header'
 import Home from './components/Home'
-import FileList from './components/FileList'
+import ReleaseList from './components/ReleaseList'
 import Output from './components/Output'
 import Buttons from './components/Buttons'
 import Settings from './components/Settings'
 import ConfirmWindow from './components/ConfirmWindow'
 import Footer from './components/Footer'
 
-import { connectESP, formatMacAddr, sleep, loadFiles, supported } from './lib/esp'
+import { connectESP, formatMacAddr, sleep, supported } from './lib/esp'
 import { loadSettings, defaultSettings } from './lib/settings'
+
+const RELEASES_API_URL = 'https://monocure3d.github.io/autofill-firmware-release/';
+
+const OFFSETS = {
+  'firmware.bin': '0x10000',
+  'partitions.bin': '0x8000',
+  'assets.bin': '0x3FF000',
+}
 
 const App = () => {
   const [connected, setConnected] = React.useState(false) // Connection status
@@ -30,7 +38,10 @@ const App = () => {
   const [confirmErase, setConfirmErase] = React.useState(false) // Confirm Erase Window
   const [confirmProgram, setConfirmProgram] = React.useState(false) // Confirm Flash Window
   const [flashing, setFlashing] = React.useState(false) // Enable/Disable buttons
-  const [chipName, setChipName] = React.useState('') // ESP8266 or ESP32
+  //const [chipName, setChipName] = React.useState('') // ESP8266 or ESP32
+  const [releases, setReleases] = React.useState([])
+  const [selectedReleaseId, setSelectedReleaseId] = React.useState('')
+  const [loadingReleases, setLoadingReleases] = React.useState(false)
 
   useEffect(() => {
     setSettings(loadSettings())
@@ -42,6 +53,80 @@ const App = () => {
       time: new Date(),
       value: `${msg}\n`,
     })
+  }
+
+  const fetchReleases = async () => {
+    setLoadingReleases(true)
+
+    try {
+      const response = await fetch(RELEASES_API_URL)
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch releases: ${response.status}`)
+      }
+
+      const html = await response.text()
+      const parser = new DOMParser()
+      const doc = parser.parseFromString(html, 'text/html')
+
+      const data = Array.from(doc.querySelectorAll('a'))
+        .map((a) => a.getAttribute('href') || '')
+        .filter((href) => href && href !== '../')
+        .map((href) => href.replace(/\/+$/, ''))
+        .map((tag) => ({
+          id: tag,
+          tag_name: tag,
+          name: tag,
+          assets: Object.keys(OFFSETS).map((fileName) => ({
+            name: fileName,
+            browser_download_url: `${RELEASES_API_URL}${tag}/${fileName}`,
+          })),
+        }))
+
+      setReleases(data)
+
+      if (data.length > 0) {
+        const release = data[0]
+        setSelectedReleaseId(String(release.id))
+        selectRelease(String(release.id), data)
+      } else {
+        setSelectedReleaseId('')
+        setUploads([])
+      }
+    } catch (err) {
+      addOutput(`${err}`)
+      toast.error(`${err}`, { position: 'top-center', autoClose: 3000 })
+    } finally {
+      setLoadingReleases(false)
+    }
+  }
+
+  const selectRelease = (releaseId, releaseList = releases) => {
+    setSelectedReleaseId(releaseId)
+
+    const release = releaseList.find((item) => String(item.id) === String(releaseId))
+    if (!release) {
+      setUploads([])
+      return
+    }
+
+    const nextUploads = Object.keys(OFFSETS)
+      .map((fileName) => {
+        const asset = release.assets.find((item) => item.name === fileName)
+
+        if (!asset) {
+          return null
+        }
+
+        return {
+          fileName,
+          offset: OFFSETS[fileName],
+          obj: asset.browser_download_url,
+        }
+      })
+      .filter(Boolean)
+
+    setUploads(nextUploads)
   }
 
   // Connect to ESP & init flasher stuff
@@ -88,8 +173,6 @@ const App = () => {
         autoClose: 3000
       })
 
-      //console.log(newEspStub)
-
       newEspStub.port.addEventListener('disconnect', () => {
         setConnected(false)
         setEspStub(undefined)
@@ -98,8 +181,8 @@ const App = () => {
       })
 
       setEspStub(newEspStub)
-      setUploads(await loadFiles(esploader.chipName))
-      setChipName(esploader.chipName)
+      //setChipName(esploader.chipName)
+      await fetchReleases()
     } catch (err) {
       const shortErrMsg = `${err}`.replace('Error: ','')
 
@@ -153,20 +236,14 @@ const App = () => {
 
     let success = false
 
-    const toArrayBuffer = (inputFile) => {
-      const reader = new FileReader()
+    const toArrayBuffer = async (inputFile) => {
+      const response = await fetch(inputFile)
 
-      return new Promise((resolve, reject) => {
-        reader.onerror = () => {
-          reader.abort();
-          reject(new DOMException('Problem parsing input file.'));
-        }
+      if (!response.ok) {
+        throw new Error(`Failed to download ${inputFile}`)
+      }
 
-        reader.onload = () => {
-          resolve(reader.result);
-        }
-        reader.readAsArrayBuffer(inputFile)
-      })
+      return await response.arrayBuffer()
     }
 
     for (const file of uploads) {
@@ -205,9 +282,9 @@ const App = () => {
 
       toast.success('Done! Reset ESP to run new firmware.', { position: 'top-center', toastId: 'uploaded', autoClose: 3000 })
     } else {
-      addOutput(`Please add a .bin file`)
+      addOutput(`Please select a release`)
 
-      toast.info('Please add a .bin file', { position: 'top-center', toastId: 'uploaded', autoClose: 3000 })
+      toast.info('Please select a release', { position: 'top-center', toastId: 'uploaded', autoClose: 3000 })
     }
 
     setFlashing(false)
@@ -242,10 +319,12 @@ const App = () => {
         {/* FileUpload Page */}
         {connected &&
           <Grid item>
-            <FileList
+            <ReleaseList
+              releases={releases}
+              selectedReleaseId={selectedReleaseId}
+              setSelectedReleaseId={selectRelease}
               uploads={uploads}
-              setUploads={setUploads}
-              chipName={chipName}
+              loading={loadingReleases}
             />
           </Grid>
         }
@@ -256,7 +335,7 @@ const App = () => {
             <Buttons
               erase={() => setConfirmErase(true)}
               program={() => setConfirmProgram(true)}
-              disabled={flashing}
+              disabled={flashing || loadingReleases}
             />
           </Grid>
         }
