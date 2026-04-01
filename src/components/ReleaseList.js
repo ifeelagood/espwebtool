@@ -6,9 +6,8 @@ import MenuItem from '@mui/material/MenuItem'
 import Select from '@mui/material/Select'
 import FormControl from '@mui/material/FormControl'
 import InputLabel from '@mui/material/InputLabel'
-import Typography from '@mui/material/Typography'
 
-const ReleaseList = ({ releases, selectedReleaseId, setSelectedReleaseId, uploads, loading }) => {
+const ReleaseList = ({ releases, selectedReleaseId, setSelectedReleaseId, loading }) => {
   return (
     <Box sx={{ minWidth: '22rem' }}>
       <FormControl fullWidth>
@@ -19,6 +18,8 @@ const ReleaseList = ({ releases, selectedReleaseId, setSelectedReleaseId, upload
           label='Release'
           onChange={(e) => setSelectedReleaseId(e.target.value)}
           disabled={loading || releases.length === 0}
+          sx={{ backgroundColor: '#1a1a1a' }}
+          MenuProps={{ PaperProps: { sx: { backgroundColor: '#1a1a1a' } } }}
         >
           {releases.map((release) => (
             <MenuItem key={release.id} value={String(release.id)}>
@@ -28,13 +29,6 @@ const ReleaseList = ({ releases, selectedReleaseId, setSelectedReleaseId, upload
         </Select>
       </FormControl>
 
-      <Box sx={{ mt: 2 }}>
-        {uploads.map((file) => (
-          <Typography key={file.fileName} variant='body2'>
-            {file.fileName} @ {file.offset}
-          </Typography>
-        ))}
-      </Box>
     </Box>
   )
 }
@@ -48,13 +42,13 @@ ReleaseList.propTypes = {
   ).isRequired,
   selectedReleaseId: PropTypes.string.isRequired,
   setSelectedReleaseId: PropTypes.func.isRequired,
-  uploads: PropTypes.arrayOf(
-    PropTypes.shape({
-      fileName: PropTypes.string.isRequired,
-      offset: PropTypes.string.isRequired,
-      obj: PropTypes.string,
-    })
-  ).isRequired,
+  // uploads: PropTypes.arrayOf(
+  //   PropTypes.shape({
+  //     fileName: PropTypes.string.isRequired,
+  //     offset: PropTypes.string.isRequired,
+  //     obj: PropTypes.string,
+  //   })
+  // ).isRequired,
   loading: PropTypes.bool.isRequired,
 }
 

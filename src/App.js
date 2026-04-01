@@ -35,7 +35,6 @@ const App = () => {
   const [uploads, setUploads] = React.useState([]) // Uploaded Files
   const [settingsOpen, setSettingsOpen] = React.useState(false) // Settings Window
   const [settings, setSettings] = React.useState({...defaultSettings}) // Settings
-  const [confirmErase, setConfirmErase] = React.useState(false) // Confirm Erase Window
   const [confirmProgram, setConfirmProgram] = React.useState(false) // Confirm Flash Window
   const [flashing, setFlashing] = React.useState(false) // Enable/Disable buttons
   //const [chipName, setChipName] = React.useState('') // ESP8266 or ESP32
@@ -86,7 +85,7 @@ const App = () => {
       setReleases(data)
 
       if (data.length > 0) {
-        const release = data[0]
+        const release = data.reduce((a, b) => String(b.id) > String(a.id) ? b : a)
         setSelectedReleaseId(String(release.id))
         selectRelease(String(release.id), data)
       } else {
@@ -146,17 +145,6 @@ const App = () => {
     })
 
     try {
-      toast.info('Connecting...', { 
-        position: 'top-center', 
-        autoClose: false, 
-        toastId: 'connecting' 
-      })
-      toast.update('connecting', {
-        render: 'Connecting...',
-        type: toast.TYPE.INFO,
-        autoClose: false
-      })
-
       setConnecting(true)
 
       await esploader.initialize()
@@ -167,11 +155,6 @@ const App = () => {
       const newEspStub = await esploader.runStub()
 
       setConnected(true)
-      toast.update('connecting', {
-        render: 'Connected 🚀',
-        type: toast.TYPE.SUCCESS,
-        autoClose: 3000
-      })
 
       newEspStub.port.addEventListener('disconnect', () => {
         setConnected(false)
@@ -184,48 +167,12 @@ const App = () => {
       //setChipName(esploader.chipName)
       await fetchReleases()
     } catch (err) {
-      const shortErrMsg = `${err}`.replace('Error: ','')
-
-      toast.update('connecting', {
-        render: shortErrMsg,
-        type: toast.TYPE.ERROR,
-        autoClose: 3000
-      })
-
       addOutput(`${err}`)
 
       await esploader.port.close()
       await esploader.disconnect()
     } finally {
       setConnecting(false)
-    }
-  }
-
-  // Erase firmware on ESP
-  const erase = async () => {
-    setConfirmErase(false)
-    setFlashing(true)
-    toast(`Erasing flash memory. Please wait...`, { position: 'top-center', toastId: 'erase', autoClose: false })
-
-    try {
-      const stamp = Date.now()
-
-      addOutput(`Start erasing`)
-      const interval = setInterval(() => {
-        addOutput(`Erasing flash memory. Please wait...`)
-      }, 3000)
-
-      await espStub.eraseFlash()
-
-      clearInterval(interval)
-      addOutput(`Finished. Took ${Date.now() - stamp}ms to erase.`)
-      toast.update('erase', { render: 'Finished erasing memory.', type: toast.TYPE.INFO, autoClose: 3000 })
-    } catch (e) {
-      addOutput(`ERROR!\n${e}`)
-      toast.update('erase', { render: `ERROR!\n${e}`, type: toast.TYPE.ERROR, autoClose: 3000 })
-      console.error(e)
-    } finally {
-      setFlashing(false)
     }
   }
 
@@ -316,7 +263,7 @@ const App = () => {
           </Grid>
         }
 
-        {/* FileUpload Page */}
+        {/* FileUpload Page + Program Button */}
         {connected &&
           <Grid item>
             <ReleaseList
@@ -326,14 +273,7 @@ const App = () => {
               uploads={uploads}
               loading={loadingReleases}
             />
-          </Grid>
-        }
-
-        {/* Erase & Program Buttons */}
-        {connected &&
-          <Grid item>
             <Buttons
-              erase={() => setConfirmErase(true)}
               program={() => setConfirmProgram(true)}
               disabled={flashing || loadingReleases}
             />
@@ -355,14 +295,6 @@ const App = () => {
         setSettings={setSettings}
         settings={settings}
         connected={connected}
-      />
-
-      {/* Confirm Erase Window */}
-      <ConfirmWindow
-        open={confirmErase}
-        text={'This will erase the memory of your ESP.'}
-        onOk={erase}
-        onCancel={() => setConfirmErase(false)}
       />
 
       {/* Confirm Flash/Program Window */}

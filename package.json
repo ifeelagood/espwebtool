@@ -2,7 +2,7 @@
   "name": "espwebtool",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://localhost",
+  "homepage": "/",
   "dependencies": {
     "@emotion/react": "^11.8.2",
     "@emotion/styled": "^11.8.1",
@@ -29,6 +29,15 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "overrides": {
+    "nth-check": "^2.0.1",
+    "postcss": "^8.4.31",
+    "serialize-javascript": ">=7.0.5",
+    "@tootallnate/once": "^3.0.1",
+    "ws": "^7.5.10",
+    "yaml": "^2.0.0",
+    "webpack-dev-server": ">=5.2.1"
   },
   "browserslist": {
     "production": [
