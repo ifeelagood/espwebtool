@@ -29,4 +29,4 @@ jobs:
           personal_token: ${{ secrets.GITHUB_TOKEN }}
           publish_branch: gh-pages  # default: gh-pages
           publish_dir: ./build
-          cname: esptool.spacehuhn.com
+          cname: autofill.monocure3d.com.au
