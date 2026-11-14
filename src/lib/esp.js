@@ -1,42 +1,40 @@
-import localforage from "localforage"
+import localforage from 'localforage'
 
-const connectESP = async t => {
-    const esploaderMod = await window.esptoolPackage;
-    const e = await navigator.serial.requestPort();
-    return t.log("Connecting..."), await e.open({
-        baudRate: t.baudRate
-    }), t.log("Connected successfully."), new esploaderMod.ESPLoader(e, t);
-};
+const connectESP = async ({ baudRate, terminal }) => {
+    const { ESPLoader, Transport } = await window.esptoolPackage
+    const port = await navigator.serial.requestPort()
 
-const formatMacAddr = (macAddr) => {
-    return macAddr.map((value) => value.toString(16).toUpperCase().padStart(2, '0')).join(':')
+    return new ESPLoader({
+        transport: new Transport(port),
+        baudrate: baudRate,
+        terminal: terminal,
+    })
 }
 
-const sleep = (ms) => {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+const mergedFile = () => {
+    // Merged images (bootloader + partition table + app) always go to 0x0
+    return [{ offset: 0 }]
 }
 
-const defaultFiles = (chipName) => {
-    //console.log(chipName)
-
-    if (chipName.includes('ESP32')) {
-        return [
-            { offset: '8000' },
-            { offset: '10000' },
-            { offset: '3FF000' }
-        ]
-    } else {
-        return [
-            { offset: 0 }
-        ]
+// Layout of separate ESP-IDF build outputs: bootloader, partition table, boot_app0, app
+const multipleFiles = (chipName) => {
+    if (!chipName || !chipName.includes('ESP32')) {
+        return [{ offset: 0 }, { offset: '8000' }, { offset: '10000' }]
     }
+
+    if (chipName === 'ESP32') {
+        return [{ offset: '1000' }, { offset: '8000' }, { offset: 'E000' }, { offset: '10000' }]
+    }
+
+    // ESP32-S2/S3/C2/C3/C5/C6/H2 keep the bootloader at 0x0
+    return [{ offset: 0 }, { offset: '8000' }, { offset: 'E000' }, { offset: '10000' }]
 }
 
 const saveFiles = (newFiles) => {
     localforage.setItem('uploads', newFiles)
 }
 
-const loadFiles = async (chipName) => {
+const loadFiles = async () => {
     const value = await localforage.getItem('uploads')
 
     if (value) {
@@ -44,11 +42,22 @@ const loadFiles = async (chipName) => {
         return value
     }
 
-    return defaultFiles(chipName)
+    return mergedFile()
 }
 
 const supported = () => {
-    return ('serial' in navigator)
+    return 'serial' in navigator
 }
 
-export { connectESP, formatMacAddr, sleep, defaultFiles, saveFiles, loadFiles, supported }
+// Converts esptool-js flash size strings like "512KB" or "4MB" to bytes
+const flashSizeToBytes = (size) => {
+    const match = /^(\d+)(KB|MB)$/.exec(size)
+
+    if (!match) {
+        return undefined
+    }
+
+    return parseInt(match[1]) * (match[2] === 'MB' ? 1024 * 1024 : 1024)
+}
+
+export { connectESP, mergedFile, multipleFiles, saveFiles, loadFiles, supported, flashSizeToBytes }

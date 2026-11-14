@@ -14,51 +14,57 @@ import SettingsIcon from '@mui/icons-material/Settings'
 
 const Home = (props) => {
     return (
-        <Grid
-            container
-            spacing={0}
-            direction='column'
-            alignItems='center'
-            justifyContent='center'
-        >
+        <Grid container spacing={0} direction='column' alignItems='center' justifyContent='center'>
             <Grid item xs={3}>
-
-                {props.supported() ?
+                {props.supported() ? (
                     <Box align='center'>
                         <Box>
-                            <Button variant='contained' color='success' size='large' onClick={props.connect} sx={{ m: 1 }}>
+                            <Button
+                                variant='contained'
+                                color='success'
+                                size='large'
+                                onClick={props.connect}
+                                sx={{ m: 1 }}
+                            >
                                 Connect
                             </Button>
                         </Box>
 
                         <Box>
-                            <Button size='large' onClick={props.openSettings} sx={{ m: 1, color:'#bebebe' }}>
+                            <Button
+                                aria-label='Settings'
+                                size='large'
+                                onClick={props.openSettings}
+                                sx={{ m: 1, color: '#8a8a8a' }}
+                            >
                                 <SettingsIcon />
                             </Button>
                         </Box>
 
                         <Alert severity='info' align='left'>
-                            1. Click on Connect<br />
-                            2. Plug in your ESP & select the port<br />
-                            3. Add your .bin & set the address<br />
-                            4. Click Program to flash it 😊<br />
+                            1. Click on Connect
+                            <br />
+                            2. Plug in your ESP & select the port
+                            <br />
+                            3. Add your .bin & set the address
+                            <br />
+                            4. Click Program to flash it 😊
+                            <br />
                         </Alert>
                     </Box>
-
-                    :
-
+                ) : (
                     <Alert severity='warning'>
                         <AlertTitle>Your browser doesn&apos;t support Web Serial 😭</AlertTitle>
                         Try using&nbsp;
-                        <a href='https://www.google.com/chrome/' target='blank'>
+                        <a href='https://www.google.com/chrome/' target='_blank' rel='noopener noreferrer'>
                             <ChromeIcon fontSize='inherit' /> <b>Chrome</b>
                         </a>
                         ,&nbsp;
-                        <a href='https://www.microsoft.com/en-us/edge' target='blank'>
+                        <a href='https://www.microsoft.com/en-us/edge' target='_blank' rel='noopener noreferrer'>
                             <EdgeIcon fontSize='inherit' /> <b>Edge</b>
                         </a>
                         , or&nbsp;
-                        <a href='https://www.opera.com/' target='blank'>
+                        <a href='https://www.opera.com/' target='_blank' rel='noopener noreferrer'>
                             <OperaIcon fontSize='inherit' /> <b>Opera</b>
                         </a>
                         <br />
@@ -66,13 +72,16 @@ const Home = (props) => {
                         <br />
                         <br />
                         Learn more about&nbsp;
-                        <a href='https://developer.mozilla.org/en-US/docs/Web/API/Serial#browser_compatibility' target='blank'>
+                        <a
+                            href='https://developer.mozilla.org/en-US/docs/Web/API/Serial#browser_compatibility'
+                            target='_blank'
+                            rel='noopener noreferrer'
+                        >
                             browser compatibility
                         </a>
                     </Alert>
-                }
+                )}
             </Grid>
-
         </Grid>
     )
 }

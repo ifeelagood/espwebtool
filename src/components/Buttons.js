@@ -6,7 +6,12 @@ import Button from '@mui/material/Button'
 
 const Buttons = (props) => {
     return (
-        <Grid container direction='row' justifyContent='center' alignItems='center' sx={{ mt: 2 }}>
+        <Grid container spacing={2} direction='row' justifyContent='center' alignItems='center' sx={{ mt: 2 }}>
+            <Grid item>
+                <Button variant='outlined' color='warning' onClick={props.disconnect} disabled={props.disabled}>
+                    Disconnect
+                </Button>
+            </Grid>
             <Grid item>
                 <Button
                     variant='contained'
@@ -23,6 +28,7 @@ const Buttons = (props) => {
 }
 
 Buttons.propTypes = {
+    disconnect: PropTypes.func,
     program: PropTypes.func,
     disabled: PropTypes.bool,
 }

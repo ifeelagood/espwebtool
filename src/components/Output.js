@@ -15,31 +15,28 @@ const Output = (props) => {
     const received = useRef('')
     const [lines, setLines] = useState([])
 
-    useEffect(
-        () => {
-            const str = `${received.current}${props.received.value}`
-            const lines = str.split('\n')
+    useEffect(() => {
+        const str = `${received.current}${props.received.value}`
+        const lines = str.split('\n')
 
-            let newReceived = str
-            const newLines = []
+        let newReceived = str
+        const newLines = []
 
-            if (lines.length > 1) {
-                newReceived = lines.pop()
+        if (lines.length > 1) {
+            newReceived = lines.pop()
 
-                lines.forEach(line => {
-                    newLines.push(`${line}`)
-                })
-            }
-            setLines((current) => current.concat(newLines))
-            received.current = newReceived
-        },
-        [props.received],
-    )
+            lines.forEach((line) => {
+                newLines.push(`${line}`)
+            })
+        }
+        setLines((current) => current.concat(newLines))
+        received.current = newReceived
+    }, [props.received])
 
     // Output toggle Visibility
     const loadOpen = () => {
         const cookieValue = getCookie('output')
-        return cookieValue ? (cookieValue === 'true') : true
+        return cookieValue ? cookieValue === 'true' : true
     }
 
     const openOutput = (value) => {
@@ -52,38 +49,34 @@ const Output = (props) => {
     return (
         <pre className={styles.pre}>
             <>
-                { /* Toggle */}
+                {/* Toggle */}
                 <FormControlLabel
                     control={
                         <Checkbox
                             checked={visible}
-                            onChange={e => openOutput(e.target.checked)}
+                            onChange={(e) => openOutput(e.target.checked)}
                             icon={<ChevronRightIcon />}
                             checkedIcon={<KeyboardArrowDownIcon />}
                         />
                     }
-                    label="Output"
-
+                    label='Output'
                 />
-
-
             </>
 
-            { /* Actual Output */}
-            {visible &&
+            {/* Actual Output */}
+            {visible && (
                 <Box className={styles.box}>
                     <code className={styles.code}>
-
-                        { /* Lines */}
+                        {/* Lines */}
                         {lines.map((line, i) => (
                             <span key={i}>
-                                {line}<br />
+                                {line}
+                                <br />
                             </span>
                         ))}
-
                     </code>
                 </Box>
-            }
+            )}
         </pre>
     )
 }

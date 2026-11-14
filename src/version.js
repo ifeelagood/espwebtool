@@ -1,5 +1,6 @@
 const version = {
-    name: 'dev',
+    name: '0.2.1',
+    commit: 'dev',
     domain: 'localhost',
 }
 
